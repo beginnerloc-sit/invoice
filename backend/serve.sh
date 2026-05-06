@@ -25,11 +25,26 @@ is_running() {
   [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null
 }
 
-start() {
-  if is_running; then
-    echo "[serve] already running (pid $(cat "$PID_FILE")) on port $PORT"
-    exit 0
+free_port() {
+  local pids
+  pids="$(lsof -ti tcp:"$PORT" -sTCP:LISTEN 2>/dev/null || true)"
+  if [[ -n "$pids" ]]; then
+    echo "[serve] port $PORT busy (pid: $(echo $pids | tr '\n' ' ')) — killing"
+    # shellcheck disable=SC2086
+    kill $pids 2>/dev/null || true
+    sleep 0.5
+    pids="$(lsof -ti tcp:"$PORT" -sTCP:LISTEN 2>/dev/null || true)"
+    if [[ -n "$pids" ]]; then
+      # shellcheck disable=SC2086
+      kill -9 $pids 2>/dev/null || true
+      sleep 0.3
+    fi
   fi
+  rm -f "$PID_FILE"
+}
+
+start() {
+  free_port
 
   if [[ ! -d "$VENV" ]]; then
     echo "[serve] error: venv not found at $VENV" >&2
