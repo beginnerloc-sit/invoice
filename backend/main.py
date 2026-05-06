@@ -17,7 +17,7 @@ app = FastAPI(title="AI Invoice Registry")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5000", "http://127.0.0.1:5000"],
+    allow_origins=["http://localhost:5000", "http://127.0.0.1:5000", "https://invoice.tienloc.org"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
