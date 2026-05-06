@@ -21,8 +21,16 @@ PID_FILE="$DIR/server.pid"
 LOG_DIR="$DIR/logs"
 LOG_FILE="$LOG_DIR/server.log"
 DIST="$DIR/dist"
+DEPLOY_DIR="${DEPLOY_DIR:-/var/www/invoice}"
 
 mkdir -p "$LOG_DIR"
+
+# Use sudo only if we're not root and sudo is available; otherwise run directly.
+if [[ "$EUID" -ne 0 ]] && command -v sudo >/dev/null 2>&1; then
+  SUDO="sudo"
+else
+  SUDO=""
+fi
 
 is_running() {
   [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null
@@ -53,6 +61,24 @@ build() {
   fi
   echo "[serve] building production bundle..."
   npm run build
+  deploy
+}
+
+deploy() {
+  if [[ ! -d "$DIST" ]]; then
+    echo "[serve] error: $DIST does not exist — build first" >&2
+    exit 1
+  fi
+  echo "[serve] deploying $DIST → $DEPLOY_DIR"
+  $SUDO mkdir -p "$DEPLOY_DIR"
+  if command -v rsync >/dev/null 2>&1; then
+    $SUDO rsync -a --delete "$DIST/" "$DEPLOY_DIR/"
+  else
+    # rsync not installed — fall back to clean + copy
+    $SUDO find "$DEPLOY_DIR" -mindepth 1 -delete
+    $SUDO cp -R "$DIST/." "$DEPLOY_DIR/"
+  fi
+  echo "[serve] deployed."
 }
 
 start() {
@@ -112,9 +138,10 @@ status() {
 case "${1:-start}" in
   start)   start ;;
   build)   build ;;
+  deploy)  deploy ;;
   stop)    stop ;;
   restart) stop || true; build; start ;;
   status)  status ;;
   logs)    tail -f "$LOG_FILE" ;;
-  *)       echo "usage: $0 {start|build|stop|restart|status|logs}"; exit 1 ;;
+  *)       echo "usage: $0 {start|build|deploy|stop|restart|status|logs}"; exit 1 ;;
 esac
