@@ -7,7 +7,7 @@ set -e
 # --- Config ---
 PROJECT_DIR="$HOME/project/invoice"
 SERVICE_NAME="invoice-backend"
-VENV_PATH="$PROJECT_DIR/.venv"
+VENV_PATH="$PROJECT_DIR/venv"
 HEALTH_URL="http://127.0.0.1:7000"
 
 # --- Flags ---
@@ -54,7 +54,7 @@ cd "$PROJECT_DIR"
 
 if [ ! -d "$VENV_PATH" ]; then
     err "Virtualenv not found at $VENV_PATH"
-    echo "Create it with: python3 -m venv .venv"
+    echo "Create it with: python3 -m venv venv"
     exit 1
 fi
 
