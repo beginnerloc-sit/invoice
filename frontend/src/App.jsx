@@ -2,6 +2,8 @@ import { useMemo, useRef, useState } from 'react'
 import * as XLSX from 'xlsx'
 import './App.css'
 
+const API_BASE = 'https://invoice-backend.tienloc.org'
+
 function exportToExcel({ results, columns, summary }) {
   const headers = ['S/N', 'File', ...columns.map(c => c.name), 'Notes']
   const rows = results.map((r, i) => {
@@ -312,7 +314,7 @@ export default function App() {
       const fd = new FormData()
       for (const f of files) fd.append('files', f)
       fd.append('columns', JSON.stringify(validColumns))
-      const res = await fetch('/api/extract', { method: 'POST', body: fd })
+      const res = await fetch(`${API_BASE}/api/extract`, { method: 'POST', body: fd })
       if (!res.ok) {
         const t = await res.text()
         throw new Error(t || `HTTP ${res.status}`)
